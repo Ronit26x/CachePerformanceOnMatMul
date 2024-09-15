@@ -44,20 +44,49 @@ Result read(string filename) {
 	return ab;
 }
 
-vector< vector<int> > scatter(vector< vector<int> > A) {
-	int n = A.size();
-	int number_of_indices = 1000;
-	vector<int> indices(number_of_indices), data(number_of_indices);
-	for(int i = 0; i < number_of_indices ; i++){
-		indices[i] = rand() % (n*n);
-		data[i] = rand();
-	}
-	for(int i = 0 ; i < number_of_indices ; i++){
-		int row = indices[i]/n;
-		int col = indices[i]%n;
-		A[row][col] = data[i];
-	}
-	return A;
+vector<vector<int>> convolve(vector<vector<int>> A)
+{
+    // Gaussian filter
+    vector<vector<int>> filter = {
+        {1, 2, 1},
+        {2, 4, 2},
+        {1, 2, 1}};
+    int n = A.size();
+
+    for (int i = 0; i < n; i++)
+    {
+        A[i].insert(A[i].begin(), 0);
+        A[i].insert(A[i].end(), 0);
+    }
+    vector<int> temp(n+2, 0);
+    A.insert(A.begin(), temp);
+    A.insert(A.end(), temp);
+
+    vector<vector<int>> res(n * n, vector<int> (n,0));
+    for (int i = 1; i <= n; i++)
+    {
+        for (int j = 1; j <= n; j++)
+        {
+            // res[i][j]
+
+            // 00 01 02  x-1, y-1    x-1,y     x-1,y+1
+            // 10 11 12  x,y-1      x, y       x, y+1
+            // 20 21 22  x+1, y-1    x+1,y     x+1, y+1
+            int sum = 0;
+            sum += A[i - 1][j - 1]  * filter[0][0];
+            sum += A[i - 1][j]      * filter[0][1];
+            sum += A[i - 1][j + 1]  * filter[0][2];
+            sum += A[i][j - 1]      * filter[1][0];
+            sum += A[i][j]          * filter[1][1];
+            sum += A[i][j + 1]      * filter[1][2];
+            sum += A[i + 1][j - 1]  * filter[2][0];
+            sum += A[i + 1][j]      * filter[2][1];
+            sum += A[i + 1][j + 1]  * filter[2][2];
+            sum = sum / 16;
+            res[i - 1][j - 1] = (int)sum;
+        }
+    }
+    return res;
 }
 
 void printMatrix(vector< vector<int> > matrix) {
@@ -84,7 +113,7 @@ int main (int argc, char* argv[]) {
 	}
 	Result result = read (filename);
     parsec_roi_begin();
-	vector< vector<int> > C = scatter(result.A);
+	vector< vector<int> > C = convolve(result.A);
     parsec_roi_end();
 	//printMatrix(C);
 	return 0;
